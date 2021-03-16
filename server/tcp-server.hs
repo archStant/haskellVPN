@@ -1,12 +1,13 @@
 -- tcp-server.hs
-import Network
-import System.IO
-import System.Process
-import Control.Concurrent
+import qualified Network as N -- To get flycheck to shut the fuck up about PortNumber
+import Network            (Socket, withSocketsDo, listenOn, accept)
+import System.IO          (Handle, hPutStr, hGetLine, hClose)
+import System.Process     (proc, StdStream(CreatePipe), createProcess, std_in, std_out)
+import Control.Concurrent (forkIO)
 
 main :: IO ()
 main = withSocketsDo $ do
-  sock <- Network.listenOn $ PortNumber 3001
+  sock <- listenOn $ N.PortNumber 3001
   putStrLn "Begynder server"
   handleConnections sock
 

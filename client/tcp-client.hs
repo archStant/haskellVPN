@@ -1,15 +1,15 @@
 -- tcp-client.hs
 
-import Network
-import System.IO
+import qualified Network as N
+import System.IO (Handle, hPutStr, hGetLine, hClose)
 
 
 main :: IO ()
-main = withSocketsDo $ do
+main = N.withSocketsDo $ do
   -- putStrLn "Address to connect to:"
   -- serverIP <- getLine
   -- handle <- connectTo serverIP (PortNumber 3001)
-  handle <- connectTo "127.0.0.1" (PortNumber 3001)
+  handle <- N.connectTo "127.0.0.1" (N.PortNumber 3001)
   putStrLn "Connected!"
   hPutStr handle ("initSRProtocol\n")
   doStuff handle
