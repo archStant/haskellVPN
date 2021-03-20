@@ -1,9 +1,14 @@
 -- tcp-server.hs
 import qualified Network as N -- To get flycheck to shut the fuck up about PortNumber
 import Network            (Socket, withSocketsDo, listenOn, accept)
-import System.IO          (Handle, hPutStr, hGetLine, hClose)
+import System.IO          (Handle, hPutStr, hGetLine, hGetChar, hClose)
 import System.Process     (proc, StdStream(CreatePipe), createProcess, std_in, std_out)
 import Control.Concurrent (forkIO)
+import Numeric            (showHex)
+import qualified Numeric as N
+import qualified Data.Char as DC
+import Data.Hex (unhex)
+import Control.Exception (try, IOException)
 
 main :: IO ()
 main = withSocketsDo $ do
@@ -16,46 +21,44 @@ handleConnections :: Socket -> IO ()
 handleConnections sock = do
   -- Accept connection from client
   (handle, host, port) <- accept sock
-  -- Check for start of protocol transmission
-  output <- hGetLine handle
-  case output of
-    "initSRProtocol" -> do
-      putStrLn "a"
-      let cp = (proc "/bin/bash" [] )
-               {std_in = CreatePipe, std_out = CreatePipe}
-      putStrLn "b"
-      (Just bashIn, Just bashOut, _, _) <- createProcess cp
-      putStrLn "c"
-      forkIO $ dumpHandle bashOut
-      doStuff handle bashIn
-      -- TODO : Wait på bash-process
-      return ()
-    _ -> return ()
+  forkIO $ sendHex handle
+  shovel handle
   hClose handle
   handleConnections sock
 
-dumpHandle :: Handle -> IO ()
-dumpHandle handle = do
-  tmp <- hGetLine handle
-  putStrLn ("> " ++ tmp)
-  -- putStrLn "> "
-  dumpHandle handle
 
-doStuff :: Handle -> Handle -> IO ()
-doStuff handle bashIn = do
-  -- Få en linie fra klienten
-  putStrLn "0"
-  output <- hGetLine handle
-  putStrLn "1"
-  case output of
-    "exitSRProtocol" -> putStrLn "Closing connection"
-    _ -> do
-      -- Send den til stdout
-      putStrLn "2"
-      putStrLn output
-      hPutStr bashIn (output ++ "\n")
-      -- Send en newline til klienten
-      hPutStr handle "\n"
-      putStrLn "3"
-      -- Gør det igen
-      doStuff handle bashIn
+sendHex :: Handle -> IO ()
+sendHex handle = do
+  line <- getLine
+  -- do
+  --   str  <- unhex line
+  --   try $ hPutStr handle str ::  IO (Either IOException ())
+  --   sendHex handle
+  case unhex line of
+    Just str -> do
+      eOut <- try $ hPutStr handle str ::  IO (Either IOException ())
+      case eOut of
+        Right () -> sendHex handle
+        Left _   -> return ()
+    Nothing -> sendHex handle
+
+
+putHexChar :: Char -> IO ()
+putHexChar c = do
+  let i = fromEnum c
+  if (i <= 15)
+    then putStr "0"
+    else return ()
+  putStr $ showHex i ""
+
+
+shovel :: Handle -> IO ()
+shovel handle = do
+  eOut <- try $ hGetChar handle ::  IO (Either IOException Char)
+  case eOut of
+    Right c -> do
+      putHexChar c
+      shovel handle
+    Left _ -> do
+      putStrLn ("Lukker forbindelse " ++ (show handle))
+      return ()

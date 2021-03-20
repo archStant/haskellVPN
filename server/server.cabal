@@ -20,6 +20,7 @@ executable server
   -- other-modules:
   -- other-extensions:
   build-depends:       base >=4.9 && <4.10,
+                       hex >= 0.1.2,
                        network,
                        process
   -- hs-source-dirs:
