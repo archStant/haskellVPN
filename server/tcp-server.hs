@@ -22,7 +22,7 @@ handleConnections sock = do
   -- Accept connection from client
   (handle, host, port) <- accept sock
   forkIO $ sendHex handle
-  shovel handle
+  shovelStdOut handle
   hClose handle
   handleConnections sock
 
@@ -52,13 +52,13 @@ putHexChar c = do
   putStr $ showHex i ""
 
 
-shovel :: Handle -> IO ()
-shovel handle = do
+shovelStdOut :: Handle -> IO ()
+shovelStdOut handle = do
   eOut <- try $ hGetChar handle ::  IO (Either IOException Char)
   case eOut of
     Right c -> do
       putHexChar c
-      shovel handle
+      shovelStdOut handle
     Left _ -> do
       putStrLn ("Lukker forbindelse " ++ (show handle))
       return ()
