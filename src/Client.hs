@@ -1,4 +1,5 @@
 -- tcp-client.hs
+module Client (client) where
 import qualified Network as N -- To get flycheck to shut the fuck up about PortNumber
 import Network            (Socket, withSocketsDo, listenOn, accept)
 import System.IO          (Handle, hPutStr, hPutChar, hGetLine, hGetChar, hClose)
@@ -11,8 +12,8 @@ import Data.Hex (unhex)
 import Control.Exception (try, IOException)
 
 
-main :: IO ()
-main = withSocketsDo $ do
+client :: IO ()
+client = withSocketsDo $ do
   serverHandle <- N.connectTo "localhost" (N.PortNumber 3001)
   putStrLn "Roald"
   sock <- listenOn $ N.PortNumber 3002

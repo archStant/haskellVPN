@@ -1,4 +1,4 @@
-# Revision history for client
+# Revision history for hasVPN
 
 ## 0.1.0.0  -- YYYY-mm-dd
 

@@ -1,4 +1,8 @@
 -- tcp-server.hs
+{-# language DeriveAnyClass #-}
+{-# language DeriveGeneric #-}
+
+module Server (server) where
 import qualified Network as N -- To get flycheck to shut the fuck up about PortNumber
 import Network            (Socket, withSocketsDo, listenOn, accept)
 import System.IO          (Handle, hPutStr, hGetLine, hGetChar, hClose)
@@ -10,8 +14,8 @@ import qualified Data.Char as DC
 import Data.Hex (unhex)
 import Control.Exception (try, IOException)
 
-main :: IO ()
-main = withSocketsDo $ do
+server :: IO ()
+server = withSocketsDo $ do
   sock <- listenOn $ N.PortNumber 3001
   putStrLn "Begynder server"
   handleConnections sock
