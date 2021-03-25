@@ -6,17 +6,16 @@ import System.IO          (Handle, hPutStr, hPutChar, hGetLine, hGetChar, hClose
 import System.Process     (proc, StdStream(CreatePipe), createProcess, std_in, std_out)
 import Control.Concurrent (forkIO)
 import Numeric            (showHex)
-import qualified Numeric as N
 import qualified Data.Char as DC
 import Data.Hex (unhex)
 import Control.Exception (try, IOException)
 
 
-client :: IO ()
-client = withSocketsDo $ do
+client :: N.PortNumber -> IO ()
+client port = withSocketsDo $ do
   serverHandle <- N.connectTo "localhost" (N.PortNumber 3001)
   putStrLn "Roald"
-  sock <- listenOn $ N.PortNumber 3002
+  sock <- listenOn $ N.PortNumber port
   putStrLn "Begynder server"
   handleConnections serverHandle sock
 

@@ -7,5 +7,5 @@ main :: IO ()
 main = do
   args <- getArgs
   case mode args of
-    Server -> server
-    Client -> client
+    Server -> server $ port args
+    Client -> client $ port args

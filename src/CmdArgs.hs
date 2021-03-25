@@ -2,13 +2,14 @@ module CmdArgs (Args(mode, port), Mode(Server,Client), getArgs) where
 import qualified Options.Applicative as OA
 import Control.Applicative ((<|>))
 import Data.Monoid ((<>))
+import Network (PortNumber)
 --import Control.Exception (try)
 --import System.Exit (ExitCode(ExitSuccess, ExitFailure), exitWith)
 
 data Mode = Server | Client deriving (Show, Read)
 data Args    =
   Args { mode :: Mode
-       , port    :: Int
+       , port    :: PortNumber
        } deriving (Show)
 
 parseServer :: OA.Parser Mode
@@ -30,7 +31,7 @@ parseMode = parseServer
             <|> parseClient
             <|> OA.option OA.auto (OA.value Client) -- default
 
-parsePort :: OA.Parser Int
+parsePort :: OA.Parser PortNumber
 parsePort = OA.option OA.auto
   ( OA.long "port"
     <> OA.short 'p'

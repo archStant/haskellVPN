@@ -9,14 +9,13 @@ import System.IO          (Handle, hPutStr, hGetLine, hGetChar, hClose)
 import System.Process     (proc, StdStream(CreatePipe), createProcess, std_in, std_out)
 import Control.Concurrent (forkIO)
 import Numeric            (showHex)
-import qualified Numeric as N
 import qualified Data.Char as DC
 import Data.Hex (unhex)
 import Control.Exception (try, IOException)
 
-server :: IO ()
-server = withSocketsDo $ do
-  sock <- listenOn $ N.PortNumber 3001
+server :: N.PortNumber -> IO ()
+server port = withSocketsDo $ do
+  sock <- listenOn $ N.PortNumber port
   putStrLn "Begynder server"
   handleConnections sock
 
