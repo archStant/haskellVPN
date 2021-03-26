@@ -1,10 +1,26 @@
 module CmdArgs (Args(mode, port, hostname), Mode(Server,Client), getArgs) where
-import qualified Options.Applicative as OA
 import Control.Applicative ((<|>))
 import Data.Monoid ((<>))
 import Network (HostName, PortNumber)
---import Control.Exception (try)
---import System.Exit (ExitCode(ExitSuccess, ExitFailure), exitWith)
+import Options.Applicative ( Parser
+                           , ParserInfo
+                           , flag'
+                           , short
+                           , help
+                           , long
+                           , option
+                           , showDefault
+                           , value
+                           , auto
+                           , metavar
+                           , eitherReader
+                           , info
+                           , helper
+                           , fullDesc
+                           , progDesc
+                           , header
+                           , execParser
+                           )
 
 data Mode = Server | Client deriving (Show, Read)
 data Args    =
@@ -31,54 +47,54 @@ parseTargetAddress str = do
     return (targetIP, targetPort)
 
 
-parseServer :: OA.Parser Mode
-parseServer = OA.flag' Server
-  (OA.long "server"
-  <> OA.short 's'
-  <> OA.help "Run as a VPN server"
+parseServer :: Parser Mode
+parseServer = flag' Server
+  (long "server"
+  <> short 's'
+  <> help "Run as a VPN server"
   )
 
-parseClient :: OA.Parser Mode
-parseClient = OA.flag' Client
-  ( OA.long "client"
-  <> OA.short 'c'
-  <> OA.help "Runs as a VPN client"
+parseClient :: Parser Mode
+parseClient = flag' Client
+  ( long "client"
+  <> short 'c'
+  <> help "Runs as a VPN client"
   )
 
-parseMode :: OA.Parser Mode
+parseMode :: Parser Mode
 parseMode = parseServer
             <|> parseClient
-            <|> OA.option OA.auto (OA.value Client) -- default
+            <|> option auto (value Client) -- default
 
-parsePort :: OA.Parser PortNumber
-parsePort = OA.option OA.auto
-  ( OA.long "port"
-    <> OA.short 'p'
-    <> OA.help "Port to listen on"
-    <> OA.showDefault
-    <> OA.value 3001
-    <> OA.metavar "PORT"
+parsePort :: Parser PortNumber
+parsePort = option auto
+  ( long "port"
+    <> short 'p'
+    <> help "Port to listen on"
+    <> showDefault
+    <> value 3001
+    <> metavar "PORT"
   )
 
-parseHost :: OA.Parser (HostName, PortNumber)
-parseHost = OA.option (OA.eitherReader parseTargetAddress)
-  ( OA.long "host"
-    <> OA.short 'H'
-    <> OA.help "Do it right"
-    <> OA.showDefault
-    <> OA.value ("localhost", 3000)
-    <> OA.metavar "HOST:PORT"
+parseHost :: Parser (HostName, PortNumber)
+parseHost = option (eitherReader parseTargetAddress)
+  ( long "host"
+    <> short 'H'
+    <> help "Do it right"
+    <> showDefault
+    <> value ("localhost", 3000)
+    <> metavar "HOST:PORT"
   )
 
-parseArgs :: OA.Parser Args
+parseArgs :: Parser Args
 parseArgs = Args <$> parseMode <*> parsePort <*> parseHost
 
-progArgs :: OA.ParserInfo Args
-progArgs = OA.info (OA.helper <*> parseArgs)
-           ( OA.fullDesc
-             <> OA.progDesc "VPN server and client"
-             <> OA.header "hasVPN - a VPN written in Haskell"
+progArgs :: ParserInfo Args
+progArgs = info (helper <*> parseArgs)
+           ( fullDesc
+             <> progDesc "VPN server and client"
+             <> header "hasVPN - a VPN written in Haskell"
       )
 
 getArgs :: IO Args
-getArgs = OA.execParser progArgs
+getArgs = execParser progArgs

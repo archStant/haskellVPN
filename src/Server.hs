@@ -1,18 +1,14 @@
--- tcp-server.hs
 {-# language DeriveAnyClass #-}
 {-# language DeriveGeneric #-}
 
 module Server (server) where
 import qualified Network as N -- To get flycheck to shut the fuck up about PortNumber
 import Network            (Socket, withSocketsDo, listenOn, accept)
-import System.IO          (Handle, hPutStr, hGetLine, hGetChar, hClose)
-import System.Process     (proc, StdStream(CreatePipe), createProcess, std_in, std_out)
+import System.IO          (Handle, hPutStr, hGetChar, hClose)
 import Control.Concurrent (forkIO)
 import Numeric            (showHex)
-import qualified Data.Char as DC
 import Data.Hex (unhex)
 import Control.Exception (try, IOException)
-import System.IO (stdout, hSetBuffering, BufferMode(NoBuffering))
 
 server :: N.PortNumber -> IO ()
 server port = withSocketsDo $ do
@@ -24,9 +20,9 @@ server port = withSocketsDo $ do
 handleConnections :: Socket -> IO ()
 handleConnections sock = do
   -- Accept connection from client
-  (handle, host, port) <- accept sock
+  (handle, _, _) <- accept sock
   putStrLn "accept"
-  forkIO $ sendHex handle
+  _ <- forkIO $ sendHex handle
   shovelStdOut handle
   putStrLn "efter shovel"
   hClose handle
