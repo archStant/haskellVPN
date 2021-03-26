@@ -2,7 +2,7 @@ module CmdArgs (Args(mode, port), Mode(Server,Client), getArgs) where
 import qualified Options.Applicative as OA
 import Control.Applicative ((<|>))
 import Data.Monoid ((<>))
-import Network (PortNumber)
+import Network (HostName, PortNumber)
 --import Control.Exception (try)
 --import System.Exit (ExitCode(ExitSuccess, ExitFailure), exitWith)
 
@@ -11,6 +11,21 @@ data Args    =
   Args { mode :: Mode
        , port    :: PortNumber
        } deriving (Show)
+
+parseColon :: String -> Either String String
+parseColon (':':str) = Right str
+parseColon str = Left ("Couldn't parse \"" ++ str ++ "\" you fool!")
+
+headEither :: [a] -> Either String a
+headEither (a:_) = Right a
+headEither []    = Left "Dummernik"
+
+parsseTargetAddress :: String -> Either String (HostName, PortNumber)
+parsseTargetAddress str = do
+    (targetIP, str0) <- headEither $ reads str
+    str1 <- parseColon str0
+    (targetPort, "") <- headEither $ reads str1
+    return (targetIP, targetPort)
 
 parseServer :: OA.Parser Mode
 parseServer = OA.flag' Server
