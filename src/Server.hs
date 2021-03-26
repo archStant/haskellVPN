@@ -53,10 +53,8 @@ sendHex handle = do
 putHexChar :: Char -> IO ()
 putHexChar c = do
   let i = fromEnum c
-  if i == 0 then
-    putStr "00"
-    else if i < 16 then
-    putStr "0"
+  if i < 16
+    then putStr "0"
     else return ()
 
   putStr $ showHex i ""
