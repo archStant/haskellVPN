@@ -1,4 +1,4 @@
-module CmdArgs (Args(mode, port), Mode(Server,Client), getArgs) where
+module CmdArgs (Args(mode, port, hostname), Mode(Server,Client), getArgs) where
 import qualified Options.Applicative as OA
 import Control.Applicative ((<|>))
 import Data.Monoid ((<>))
@@ -10,23 +10,26 @@ data Mode = Server | Client deriving (Show, Read)
 data Args    =
   Args { mode :: Mode
        , port :: PortNumber
-       , host :: (HostName, PortNumber)
+       , hostname :: (HostName, PortNumber)
        } deriving (Show)
 
-parseColon :: String -> Either String String
-parseColon (':':str) = Right str
-parseColon str = Left ("Couldn't parse \"" ++ str ++ "\" you fool!")
+parseSingle :: Char -> String -> Either String String
+parseSingle c "" = Left ("Missing " ++ [c])
+parseSingle c (x:xs)
+  | c == x    = Right xs
+  | otherwise = Left ("Missing " ++ [c])
 
 headEither :: [a] -> Either String a
-headEither (a:_) = Right a
 headEither []    = Left "Dummernik"
+headEither str@(_:_) = Right $ head str
 
 parseTargetAddress :: String -> Either String (HostName, PortNumber)
 parseTargetAddress str = do
-    (targetIP, str0) <- headEither $ reads str
-    str1 <- parseColon str0
+    (targetIP, str0) <- Right $ break (\c -> c == ':') str
+    str1 <- parseSingle ':' str0
     (targetPort, "") <- headEither $ reads str1
     return (targetIP, targetPort)
+
 
 parseServer :: OA.Parser Mode
 parseServer = OA.flag' Server
@@ -60,7 +63,7 @@ parsePort = OA.option OA.auto
 parseHost :: OA.Parser (HostName, PortNumber)
 parseHost = OA.option (OA.eitherReader parseTargetAddress)
   ( OA.long "host"
-    <> OA.short 'h'
+    <> OA.short 'H'
     <> OA.help "Do it right"
     <> OA.showDefault
     <> OA.value ("localhost", 3000)

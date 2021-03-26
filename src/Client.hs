@@ -11,10 +11,10 @@ import Data.Hex (unhex)
 import Control.Exception (try, IOException)
 
 
-client :: N.PortNumber -> IO ()
-client port = withSocketsDo $ do
-  serverHandle <- N.connectTo "172.16.19.53" (N.PortNumber 3001)
-  sock <- listenOn $ N.PortNumber port
+client :: N.PortNumber -> (N.HostName, N.PortNumber) -> IO ()
+client inport (hostname, outport) = withSocketsDo $ do
+  serverHandle <- N.connectTo hostname (N.PortNumber outport)
+  sock <- listenOn $ N.PortNumber inport
   putStrLn "Begynder client"
   handleConnections serverHandle sock
 
