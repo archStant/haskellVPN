@@ -18,20 +18,15 @@ client inport (hostname, outport) = withSocketsDo $ do
   putStrLn "Begynder client"
   handleConnections serverHandle sock
 
-
 handleConnections :: Handle -> Socket -> IO ()
 handleConnections serverHandle sock = do
   -- Accept connection from client
   (handle, host, port) <- accept sock
-  putStrLn "forbindelse jaaa"
-  forkIO $ shovel handle serverHandle
+  putStrLn (show handle ++ " " ++ show serverHandle)
   forkIO $ shovel serverHandle handle
+  forkIO $ shovel handle serverHandle
   -- vent paa begge threads er lukkede
-  return $ forever ()
-  hClose handle
   handleConnections serverHandle sock
-
-forever () = forever ()
 
 shovel :: Handle -> Handle -> IO ()
 shovel inhandle outhandle = do
@@ -39,6 +34,7 @@ shovel inhandle outhandle = do
   case eOut of
     Right c -> do
       -- haandter lukket forbindelse
+      putStrLn [c]
       hPutChar outhandle c
       shovel inhandle outhandle
     Left _ -> do

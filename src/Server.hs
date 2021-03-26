@@ -12,6 +12,7 @@ import Numeric            (showHex)
 import qualified Data.Char as DC
 import Data.Hex (unhex)
 import Control.Exception (try, IOException)
+import System.IO (stdout, hSetBuffering, BufferMode(NoBuffering))
 
 server :: N.PortNumber -> IO ()
 server port = withSocketsDo $ do
@@ -24,9 +25,12 @@ handleConnections :: Socket -> IO ()
 handleConnections sock = do
   -- Accept connection from client
   (handle, host, port) <- accept sock
+  putStrLn "accept"
   forkIO $ sendHex handle
   shovelStdOut handle
+  putStrLn "efter shovel"
   hClose handle
+  putStrLn "lukket handle"
   handleConnections sock
 
 
@@ -49,15 +53,20 @@ sendHex handle = do
 putHexChar :: Char -> IO ()
 putHexChar c = do
   let i = fromEnum c
-  if (i <= 15)
-    then putStr "0"
+  if i == 0 then
+    putStr "00"
+    else if i < 16 then
+    putStr "0"
     else return ()
+
   putStr $ showHex i ""
 
 
 shovelStdOut :: Handle -> IO ()
 shovelStdOut handle = do
+  --putStrLn "i shovel"
   eOut <- try $ hGetChar handle ::  IO (Either IOException Char)
+  --putStrLn "laest char"
   case eOut of
     Right c -> do
       putHexChar c
