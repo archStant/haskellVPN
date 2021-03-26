@@ -9,7 +9,8 @@ import Network (HostName, PortNumber)
 data Mode = Server | Client deriving (Show, Read)
 data Args    =
   Args { mode :: Mode
-       , port    :: PortNumber
+       , port :: PortNumber
+       , host :: (HostName, PortNumber)
        } deriving (Show)
 
 parseColon :: String -> Either String String
@@ -20,8 +21,8 @@ headEither :: [a] -> Either String a
 headEither (a:_) = Right a
 headEither []    = Left "Dummernik"
 
-parsseTargetAddress :: String -> Either String (HostName, PortNumber)
-parsseTargetAddress str = do
+parseTargetAddress :: String -> Either String (HostName, PortNumber)
+parseTargetAddress str = do
     (targetIP, str0) <- headEither $ reads str
     str1 <- parseColon str0
     (targetPort, "") <- headEither $ reads str1
@@ -56,8 +57,18 @@ parsePort = OA.option OA.auto
     <> OA.metavar "PORT"
   )
 
+parseHost :: OA.Parser (HostName, PortNumber)
+parseHost = OA.option (OA.eitherReader parseTargetAddress)
+  ( OA.long "host"
+    <> OA.short 'h'
+    <> OA.help "Do it right"
+    <> OA.showDefault
+    <> OA.value ("localhost", 3000)
+    <> OA.metavar "HOST:PORT"
+  )
+
 parseArgs :: OA.Parser Args
-parseArgs = Args <$> parseMode <*> parsePort
+parseArgs = Args <$> parseMode <*> parsePort <*> parseHost
 
 progArgs :: OA.ParserInfo Args
 progArgs = OA.info (OA.helper <*> parseArgs)

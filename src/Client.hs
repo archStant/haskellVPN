@@ -13,10 +13,9 @@ import Control.Exception (try, IOException)
 
 client :: N.PortNumber -> IO ()
 client port = withSocketsDo $ do
-  serverHandle <- N.connectTo "localhost" (N.PortNumber 3001)
-  putStrLn "Roald"
+  serverHandle <- N.connectTo "172.16.19.53" (N.PortNumber 3001)
   sock <- listenOn $ N.PortNumber port
-  putStrLn "Begynder server"
+  putStrLn "Begynder client"
   handleConnections serverHandle sock
 
 
