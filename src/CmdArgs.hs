@@ -1,9 +1,10 @@
 module CmdArgs (Args(mode, port, hostname), Mode(Server,Client), getArgs) where
-import Control.Applicative ((<|>))
+import Data.List (foldl')
 import Data.Monoid ((<>))
+import Control.Applicative ((<|>))
 import Network (HostName, PortNumber)
-import Options.Applicative ( Parser
-                           , ParserInfo
+import qualified Options.Applicative as OA
+import Options.Applicative ( ParserInfo
                            , flag'
                            , short
                            , help
@@ -21,6 +22,7 @@ import Options.Applicative ( Parser
                            , header
                            , execParser
                            )
+import Parser (Parser, digit, manyTill, many1Till, consume, char,eof, parse)
 
 data Mode = Server | Client deriving (Show, Read)
 data Args    =
@@ -29,45 +31,42 @@ data Args    =
        , hostname :: (HostName, PortNumber)
        } deriving (Show)
 
-parseSingle :: Char -> String -> Either String String
-parseSingle c "" = Left ("Missing " ++ [c])
-parseSingle c (x:xs)
-  | c == x    = Right xs
-  | otherwise = Left ("Missing " ++ [c])
+-- should parse ports of more/less digits than 4
+portParser :: Parser PortNumber
+portParser = do
+  digits <- many1Till digit eof
+  eof
+  return $ foldl' (\acc (d,e) -> acc+d*10^e) 0 $ zip digits [length digits-1, length digits-2..0]
 
-headEither :: [a] -> Either String a
-headEither []    = Left "Dummernik"
-headEither str@(_:_) = Right $ head str
-
-parseTargetAddress :: String -> Either String (HostName, PortNumber)
-parseTargetAddress str = do
-    (targetIP, str0) <- Right $ break (\c -> c == ':') str
-    str1 <- parseSingle ':' str0
-    (targetPort, "") <- headEither $ reads str1
+hostParser :: Parser (HostName, PortNumber)
+hostParser = do
+    targetIP   <- manyTill consume $ char ':'
+    _          <- char ':'
+    targetPort <- portParser
+    eof
     return (targetIP, targetPort)
 
-
-parseServer :: Parser Mode
-parseServer = flag' Server
+serverArg :: OA.Parser Mode
+serverArg = flag' Server
   (long "server"
   <> short 's'
   <> help "Run as a VPN server"
   )
 
-parseClient :: Parser Mode
-parseClient = flag' Client
+clientArg :: OA.Parser Mode
+clientArg = flag' Client
   ( long "client"
   <> short 'c'
   <> help "Runs as a VPN client"
   )
 
-parseMode :: Parser Mode
-parseMode = parseServer
-            <|> parseClient
+modeArg :: OA.Parser Mode
+modeArg = serverArg
+            <|> clientArg
             <|> option auto (value Client) -- default
 
-parsePort :: Parser PortNumber
-parsePort = option auto
+portArg :: OA.Parser PortNumber
+portArg = option (eitherReader $ fst . parse portParser)
   ( long "port"
     <> short 'p'
     <> help "Port to listen on"
@@ -76,8 +75,8 @@ parsePort = option auto
     <> metavar "PORT"
   )
 
-parseHost :: Parser (HostName, PortNumber)
-parseHost = option (eitherReader parseTargetAddress)
+hostArg :: OA.Parser (HostName, PortNumber)
+hostArg = option (eitherReader $ (fst . parse hostParser))
   ( long "host"
     <> short 'H'
     <> help "Do it right"
@@ -86,8 +85,8 @@ parseHost = option (eitherReader parseTargetAddress)
     <> metavar "HOST:PORT"
   )
 
-parseArgs :: Parser Args
-parseArgs = Args <$> parseMode <*> parsePort <*> parseHost
+parseArgs :: OA.Parser Args
+parseArgs = Args <$> modeArg <*> portArg <*> hostArg
 
 progArgs :: ParserInfo Args
 progArgs = info (helper <*> parseArgs)
